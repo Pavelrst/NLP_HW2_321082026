@@ -28,7 +28,11 @@ def forward(data, label, params, dimensions):
 
     # Compute the probability
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    x = data
+    y = label
+    h = sigmoid(np.matmul(x, W1) + b1)
+    y_hat = softmax(np.matmul(h, W2) + b2)
+    return y_hat.squeeze()[y]
     ### END YOUR CODE
 
 
@@ -60,11 +64,37 @@ def forward_backward_prop(data, labels, params, dimensions):
     b2 = np.reshape(params[ofs:ofs + Dy], (1, Dy))
 
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    x = data
+    y = labels
+
+    h = sigmoid(np.matmul(x, W1) + b1)
+    y_hat = softmax(np.matmul(h, W2) + b2)
+    cost = - np.sum(y * np.log(y_hat))
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
-    raise NotImplementedError
+
+
+
+
+    # Calculate the diagonal matrix of sigmoid grad
+    sigmoid_grad_vector = sigmoid_grad(sigmoid(np.matmul(x, W1) + b1))
+
+    # gradW1
+    x_T = np.transpose(x)
+    W2_T = np.transpose(W2)
+    gradW1 = np.matmul(x_T, (np.matmul(y_hat-y, W2_T) * sigmoid_grad_vector))
+
+    # gradb1
+    gradb1 = np.matmul((y_hat-y), np.transpose(W2)) * sigmoid_grad_vector
+    gradb1 = np.sum(gradb1, axis=0)
+
+    # gradW2
+    gradW2 = np.matmul(np.transpose(sigmoid(np.matmul(x, W1)+b1)),(y_hat-y))
+
+    # gradb2
+    gradb2 = np.sum(y_hat-y, axis=0)
+
     ### END YOUR CODE
 
     # Stack gradients (do not modify)
@@ -81,8 +111,8 @@ def sanity_check():
     """
     print("Running sanity check...")
 
-    N = 20
-    dimensions = [10, 5, 10]
+    N = 2
+    dimensions = [5, 3, 5] #[10, 5, 10]
     data = np.random.randn(N, dimensions[0])   # each row will be a datum
     labels = np.zeros((N, dimensions[2]))
     for i in range(N):

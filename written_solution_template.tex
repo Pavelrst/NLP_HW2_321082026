@@ -6,6 +6,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{bm}
+\usepackage{bbm}
 
 \usepackage[shortlabels]{enumitem}
 \usepackage[noabbrev, capitalise]{cleveref}
@@ -41,27 +42,135 @@
 \begin{document}
 
 \refstepcounter{section}
-\section{Understanding word2vec}
-\subsection{}
-YOUR ANSWER HERE
-\subsection{}
-YOUR ANSWER HERE
-\subsection{}
-YOUR ANSWER HERE
-\subsection{}
-YOUR ANSWER HERE
-\subsection{}
-YOUR ANSWER HERE
-\refstepcounter{subsection}
-\subsubsection{}
-YOUR ANSWER HERE
-\subsubsection{}
-YOUR ANSWER HERE
-\subsubsection{}
-YOUR ANSWER HERE
-\section{Implementing word2vec}
-\setcounter{subsection}{4}
-\subsection{}
-YOUR ANSWER HERE
+\section{Gradient of Softmax + CE}
+\subparagraph{•}
+Denote SCE - Softmax Cross Entropy function:\\
+$SCE(\theta, y) = CE(\hat{y}, y) = CE(softmax(\theta), y) \\$
+$= -\sum_{i} y_i log(\hat{y}_i)\\$
+$if \ k \ - \ true \ label:\\$
+$= - log(\hat{y}_i) = -log(softmax(\theta)_k) = -log(\frac{exp(\theta_k)}{\sum_{j}exp(\theta_j)})\\$
+$= log(\sum_{j}exp(\theta_j))-\theta_k\\$
+$\Longrightarrow SCE(\theta, y) = log(\sum_{j}exp(\theta_j))-\theta_k\\$
+
+\subparagraph{•}
+Now let's calculate it's derivative with respect to some $\theta_i:\\$
+$\frac{\delta SCE}{\delta \theta_i} = \frac{log(\sum_{j}exp(\theta_j))}{\delta \theta_i} -\frac{\delta \theta_k}{\delta \theta_i}\\$
+$\downarrow \\$
+$denote: \ f \ = \sum_{j}exp(\theta_j)\\ $
+$\downarrow \\$
+$\frac{log(\sum_{j}exp(\theta_j))}{\delta \theta_i} -\frac{\delta \theta_k}{\delta \theta_i}\\$
+$= \frac{log(f)}{\delta f}\frac{\delta f}{\delta \theta_i} -\frac{\delta \theta_k}{\delta \theta_i}\\$
+$= \frac{1}{f} \sum_{j} \frac{exp(\theta_j)}{exp(\theta_i)} -\frac{\delta \theta_k}{\delta \theta_i}\\$
+$= \frac{1}{f} exp(\theta_i) -\frac{\delta \theta_k}{\delta \theta_i}\\$
+$= \frac{exp(\theta_i)}{\sum_{j} exp(\theta_j)}-\frac{\delta \theta_k}{\delta \theta_i}\\$
+$= \frac{exp(\theta_i)}{\sum_{j} exp(\theta_j)} - \mathbbm{1}(i=k)\\$
+$= softmax(\theta)_i - \mathbbm{1}(i=k)\\$
+$\Longrightarrow \nabla_\theta SCE = softmax(\theta) - y = \hat{y}-y\\$ 
+
+\subparagraph{•}
+Basically the gradient of this function is prediction softmax vector minus true label one-hot vector.
+
+\section{Gradients of NN}
+\subparagraph{•}
+In this section we use:\\
+$h=\sigma(x W_1 + b_1) \\$
+$\theta = h W_2 + b_2 \\$
+$\hat{y}= softmax(\theta) \\$
+$CE(y,\hat{y}) = -\sum_{i} y_i log(\hat{y}_i)\\$
+$\nabla_\theta SCE = \hat{y}-y$
+
+\subparagraph{•}
+Also notice that:\\
+$da(\sigma (a))=diag(\sigma' (a))= \begin{bmatrix}
+\sigma' (a_1) & 0 & 0 & 0\\
+0 & \sigma' (a_2) & 0 & 0\\
+0 & 0 & \sigma' (a_i) & 0\\
+0 & 0 & 0 & \sigma' (a_n) 
+\end{bmatrix} \ ; \ \sigma' (a_i)=\sigma(a_i)(1-\sigma(a_i))$
+
+\subparagraph{•}
+Let's write a formula for each gradient using differentials:
+
+\subparagraph{•}
+$dx(SCE)=dx(SCE(hW_2+b_2)) \\$
+$= \nabla_\theta SCE \ dx(hW_2+b_2) \\$
+$= \nabla_\theta SCE \ dx(hW_2) \\$
+$= \nabla_\theta SCE \ W_2^T \ dx(h) \\$
+$= \nabla_\theta SCE \ W_2^T \ dx(\sigma (xW_1+b_1)) \\$
+$= \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ dx(xW_1+b_1) \\$
+$= \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ W_1^T \ dx \\$
+$\Longrightarrow \nabla_x SCE = \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ W_1^T \\$
+$\Longrightarrow \nabla_x SCE = (\hat{y}-y) \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ W_1^T$
+
+This formula won't work for batched data, but we can write it in the more generic way using Hadamard product, i.e. elementwise multiplication - $\circ$ :
+
+$\Longrightarrow \nabla_x SCE = \{ (\hat{y}-y) \ W_2^T \ \circ\ \sigma' (xW_1+b_1)\} \ W_1^T$
+
+\subparagraph{•}
+Let's sanity check it's dimentions:\\
+$x - 2 \times 10 \ $ (batch of two vectors)\\
+$W_1 - 10 \times 7 \\$
+$b_1 - 1 \times 7 \\$
+$\sigma(xW_1+b_1) - 2 \times 7 $ (bias is broadcasted)\\
+$\sigma'(xW_1+b_1) - 2 \times 7 $ (bias is broadcasted)\\
+$W_2 - 7 \times 5 \\$
+$b_2 - 1 \times 5 \\$
+$y - 2 \times 5 $ (batch of two vectors)\\
+
+$\Longrightarrow \nabla_x SCE = \{ (\hat{y}-y) \ W_2^T \ \circ\ \sigma' (xW_1+b_1)\} \ W_1^T\\$
+$\Longrightarrow \ 2 \ \times \ 10 \  = \{ (2 \times 5) \ (5 \times 7) \ \circ\ (2 \times 7)\} \ (7 \times 10)$
+
+All dimensions match.
+
+\subparagraph{•}
+$dW_1(SCE)=dW_1(SCE(hW_2+b_2)) \\$
+$= \nabla_\theta SCE \ dW_1(hW_2+b_2) \\$
+$= \nabla_\theta SCE \ dW_1(hW_2) \\$
+$= \nabla_\theta SCE \ W_2^T \ dW_1(h) \\$
+$= \nabla_\theta SCE \ W_2^T \ dW_1(\sigma (xW_1+b_1)) \\$
+$= \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ dW_1(xW_1+b_1) \\$
+$= x^T \ \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ dW_1 \\$
+$\Longrightarrow \nabla_{W_1} SCE = x^T \ \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \\$
+$\Longrightarrow \nabla_{W_1} SCE = x^T \ (\hat{y}-y) \ W_2^T \ diag(\sigma' (xW_1+b_1))$
+
+Same trick with Hadamard product, i.e. elementwise multiplication - $\circ$ :\\
+$\Longrightarrow \nabla_{W_1} SCE = x^T \ \{ (\hat{y}-y) \ W_2^T \ \circ \ \sigma' (xW_1+b_1) \}$
+
+\subparagraph{•}
+$db_1(SCE)=db_1(SCE(hW_2+b_2)) \\$
+$= \nabla_\theta SCE \ db_1(hW_2+b_2) \\$
+$= \nabla_\theta SCE \ db_1(hW_2) \\$
+$= \nabla_\theta SCE \ W_2^T \ db_1(h) \\$
+$= \nabla_\theta SCE \ W_2^T \ db_1(\sigma (xW_1+b_1)) \\$
+$= \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ db_1(xW_1+b_1) \\$
+$= \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \ 1 \ db_1 \\$
+$\Longrightarrow \nabla_{b_1} SCE = \nabla_\theta SCE \ W_2^T \ diag(\sigma' (xW_1+b_1)) \\$
+$\Longrightarrow \nabla_{b_1} SCE = (\hat{y}-y) \ W_2^T \ diag(\sigma' (xW_1+b_1))$
+
+Same trick with Hadamard product, i.e. elementwise multiplication - $\circ$ :\\
+$\Longrightarrow \nabla_{b_1} SCE \approx \{ (\hat{y}-y) \ W_2^T \} \ \circ \ \sigma' (xW_1+b_1)$
+
+Notice that dims don't match, because bias was broadcasted. To match the dims, we sum the gradient along batch dimension.
+
+$\Longrightarrow \nabla_{b_1} SCE = \sum_{batch=0}^N \{ \{ (\hat{y}-y) \ W_2^T \} \ \circ \ \sigma' (xW_1+b_1)\} _{batch}$
+
+\subparagraph{•}
+$dW_2(SCE)=dW_2(SCE(hW_2+b_2)) \\$
+$= \nabla_\theta SCE \ dW_2(hW_2+b_2) \\$
+$= \nabla_\theta SCE \ dW_2(hW_2) \\$
+$= \nabla_\theta SCE \ h \ dW_2 \\$
+$= \sigma (xW_1+b_1)^T \ \nabla_\theta SCE \ dW_2 \\$
+$\Longrightarrow \nabla_{W_2} SCE = \sigma (xW_1+b_1)^T \ \nabla_\theta SCE \\$
+$\Longrightarrow \nabla_{W_2} SCE = \sigma (xW_1+b_1)^T \ (\hat{y}-y)$
+
+\subparagraph{•}
+$db_2(SCE)=db_2(SCE(hW_2+b_2)) \\$
+$= \nabla_\theta SCE \ db_2(hW_2+b_2) \\$
+$= \nabla_\theta SCE \ 1 \ dW_2 \\$
+$\Longrightarrow \nabla_{b_2} SCE = \nabla_\theta SCE \\$
+$\Longrightarrow \nabla_{b_2} SCE \approx (\hat{y}-y) $
+
+Adjust dims:\\
+$\Longrightarrow \nabla_{b_2} SCE = \sum_{batch=0}^N (\hat{y}-y)_{batch} $
 
 \end{document}
