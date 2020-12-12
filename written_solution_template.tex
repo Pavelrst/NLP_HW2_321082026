@@ -80,7 +80,7 @@ $CE(y,\hat{y}) = -\sum_{i} y_i log(\hat{y}_i)\\$
 $\nabla_\theta SCE = \hat{y}-y$
 
 \subparagraph{•}
-Also notice that:\\
+Also notice that Jacobian matrix of a vector function sigmoid is:\\
 $da(\sigma (a))=diag(\sigma' (a))= \begin{bmatrix}
 \sigma' (a_1) & 0 & 0 & 0\\
 0 & \sigma' (a_2) & 0 & 0\\
@@ -172,5 +172,14 @@ $\Longrightarrow \nabla_{b_2} SCE \approx (\hat{y}-y) $
 
 Adjust dims:\\
 $\Longrightarrow \nabla_{b_2} SCE = \sum_{batch=0}^N (\hat{y}-y)_{batch} $
+
+\section{GRU question}
+\paragraph{Advantage}
+Smaller discrete space - There are about 100 English-language characters in common usage if we include all punctuation marks. By contrast, a vocabulary is many thousands of words. For char-based model we need about 100 embeddings to represent all possible tokens.
+
+\paragraph{Disadvantage}
+Char-level models can generate unusual words. Word-level models can't generate mistyped words as these are not in their vocabulary. 
+
+
 
 \end{document}
