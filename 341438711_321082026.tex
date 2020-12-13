@@ -45,7 +45,7 @@
 
 \begin{document}
 
-\section{Word-Level Neural Bigram Language Model}
+\section*{1. Word-Level Neural Bigram Language Model}
 \subsection{Gradient of Softmax + CE}
 \subparagraph{•}
 Denote SCE - Softmax Cross Entropy function:\\
@@ -366,14 +366,14 @@ Dev perplexity : 112.889
     \end{align*}
 \end{itemize}
 
-\section{GRU question}
+\section*{3. GRU question}
 \paragraph{Advantage}
 Smaller discrete space - There are about 100 English-language characters in common usage if we include all punctuation marks. By contrast, a vocabulary is many thousands of words. For char-based model we need about 100 embeddings to represent all possible tokens.
 
 \paragraph{Disadvantage}
 Char-level models can generate unusual words. Word-level models can't generate mistyped words as these are not in their vocabulary. 
 
-\section{Perplexity}
+\section*{4. Perplexity}
 
 Write $p_i = p(s_i|s_1,\ldots,s_{i-1})$. Then for any $b > 0$,
 
