@@ -225,6 +225,104 @@ $\Longrightarrow \nabla_{b_2} SCE \approx (\hat{y}-y) $
 Adjust dims:\\
 $\Longrightarrow \nabla_{b_2} SCE = \sum_{batch=0}^N (\hat{y}-y)_{batch} $
 
+\section*{Section 2 - Theoretical Inquiry of a Simple RNN Language Model}
+
+\begin{itemize}
+    \item[(a)]
+    Some notation: Denote the elements of the matrices $\mathbf{H}, \mathbf{I}, \mathbf{U}, \mathbf{L}$ by $H_{ij}$, $I_{ij}$, $U_{ij}$, $L_{ij}$. Let $\delta_{ij} = \begin{cases} 1 & \text{if } i=j \\ 0 & \text{otherwise}\end{cases}$ (Kroenecker delta). Also note that $\mathbf{L}_{\mathbf{x}^(t)} = \mathbf{e}^{(t)}$
+    
+    We will also omit $\left. \right|_{(t)}$ for notational simplicity but it is assumed when needed.
+    
+    
+    Let $\boldsymbol{\theta}^{(t)}_1 = \mathbf{h}^{(t-1)}\mathbf{H} + \mathbf{e}^{(t)}\mathbf{I} + \mathbf{b}_1$  (logit vector), and denote its $k$-th element by $\theta_{1,k}^{(t)}$. Calculate its derivatives with respect to the various model parameters:
+    
+    \begin{align*}
+        \frac{\partial \theta^{(t)}_{1, k}}{\partial H_{ij}} &= \frac{\partial}{\partial H_{ij}} \left(\sum_{\ell}h^{(t-1)}_\ell H_{\ell k}\right) = h_i^{(t-1)} \delta_{jk}\\
+        \frac{\partial \theta^{(t)}_{1,k}}{\partial I_{ij}} &= \frac{\partial}{\partial I_{ij}} \left(\sum_{\ell}e^{(t)}_\ell I_{\ell k}\right) = e_i^{(t)} \delta_{jk}\\
+        \frac{\partial \theta^{(t)}_{1,k}}{\partial b_{1,i}} &= \delta_{ik}\\
+        \frac{\partial \theta_{1,k}^{(t)}}{e^{(t)}_i} &= I_{ik}\\
+        \frac{\partial \theta^{(t)}_{1, k}}{\partial h_i^{(t-1)}} &= \frac{\partial}{\partial h_i^{(t-1)}} \left(\sum_{\ell}h^{(t-1)}_\ell H_{\ell k}\right) = H_{ik}\\
+    \end{align*}
+    
+    We have $\mathbf{h}^{(t)} = \sigma(\boldsymbol{\theta}_1^{(t)})$. Defining $\boldsymbol{\theta}^{(t)}_2 = \mathbf{h}^{(t)}\mathbf{U} + \mathbf{b}_2$ (logit vector) and denoting its $k$-th element by $\theta^{(t)}_{2,k}$, by the chain rule we have
+    
+    \begin{align*}
+        \frac{\partial \theta_{2,k}^{(t)}}{\partial H_{ij}} &= \frac{\partial}{\partial H_{ij}} \left( \sum_\ell h_\ell^{(t)}U_{\ell k} \right) \\
+        &= \sum_\ell \frac{\partial h_\ell^{(t)}}{\partial H_{ij}}U_{\ell k}
+    \end{align*}
+    
+    \begin{align*}
+        &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)})\frac{\partial \theta_{1, \ell}^{(t)}}{\partial H_{ij}} U_{\ell k} \\
+        &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)}) h_{i}^{(t-1)}\delta_{j\ell} U_{\ell k} \\
+        &= \sigma'(\theta_{1, k}^{(t)}) h_{i}^{(t-1)} U_{j k} \\
+        \\
+        \frac{\partial \theta_{2,k}^{(t)}}{\partial I_{ij}} &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)})\frac{\partial \theta_{1, \ell}^{(t)}}{\partial I_{ij}} U_{\ell k} \\
+        &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)}) e_i^{(t)}\delta_{j\ell} U_{\ell k} \\
+        &= \sigma'(\theta_{1, j}^{(t)}) e_i^{(t)} U_{j k} \\
+        \\
+        \frac{\partial \theta_{2,k}^{(t)}}{\partial b_{1,i}} &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)})\frac{\partial \theta_{1, \ell}^{(t)}}{\partial b_{1,i}} U_{\ell k} \\
+        &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)}) \delta_{i\ell} U_{\ell k} \\
+        &= \sigma'(\theta_{1, i}^{(t)}) U_{i k} \\
+        \\
+        \frac{\partial \theta_{2,k}^{(t)}}{\partial e_i^{(t)}} &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)})\frac{\partial \theta_{1, \ell}^{(t)}}{\partial e_i^{(t)}} U_{\ell k}\\
+        &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)}) I_{i \ell} U_{\ell k}\\
+        \\
+        \frac{\partial \theta_{2,k}^{(t)}}{b_{2,i}} &= \delta_{ik}
+        \\
+        \frac{\partial \theta_{2,k}^{(t)}}{U_{ij}} &= \frac{\partial}{\partial U_{ij}} \left( \sum_\ell h_\ell^{(t)}U_{\ell k} \right) \\
+        &= h_i^{(t)}\delta_{jk}\\
+    \end{align*}
+    
+    \begin{align*}
+        \frac{\partial \theta_{2,k}^{(t)}}{h_i^{(t-1)}} &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)})\frac{\partial \theta_{1, \ell}^{(t)}}{\partial h_i^{(t-1)}} U_{\ell k} \\
+        &= \sum_\ell \sigma'(\theta_{1, \ell}^{(t)}) H_{i\ell} U_{\ell k}
+    \end{align*}
+    
+    Recall that $\sigma'(t) = \sigma(t)(1-\sigma(t))$.
+    
+    Now since $J^{(t)} = \text{CE}(\mathbf{y}^{(t)}, \hat{\mathbf{y}}^{(t)})$ and $\hat{\mathbf{y}}^{(t)} = \text{softmax}(\boldsymbol{\theta}_2^{(t)})$, by the result from problem 1a $\nabla_{\boldsymbol{\theta}_2^{(t)}} J^{(t)} = \mathbf{y}^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})$, i.e. $\frac{\partial J^{(t)}}{\theta_{2, k}^{(t)}} = y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k$. Therefore we can calculate the derivatives of $J$ with respect to the various parameters by the chain rule:
+    
+    \begin{align*}
+        \frac{\partial J^{(t)}}{\partial H_{ij}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial H_{ij}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) \sigma'(\theta_{1, k}^{(t)}) h_{i}^{(t-1)} U_{j k}\\
+        \frac{\partial J^{(t)}}{\partial \bold{H}} &= \mathbf{h}^{(t-1)T}(\mathbf{y}^{(t)}-\text{softmax}(\boldsymbol{\theta}_2^{(t)}))\boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)}) \mathbf{U}^T
+    \end{align*}
+    
+    where we define $\boldsymbol{\Sigma}(\mathbf{v})$ as in problem 1a to be the diagonal matrix with $i$-th diagonal element $\sigma'(v_i)=\sigma(v_i)(1-\sigma(v_i))$.
+    
+    \begin{align*}
+        \frac{\partial J^{(t)}}{\partial I_{ij}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial I_{ij}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) \sigma'(\theta_{1, j}^{(t)}) e_i^{(t)} U_{j k}\\
+        \frac{\partial J^{(t)}}{\partial \mathbf{I}} &= \mathbf{e}^{(t) T}(\mathbf{y}^{(t)}-\text{softmax}(\boldsymbol{\theta}_2^{(t)})) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)})\\
+        \\
+        \frac{\partial J^{(t)}}{\partial b_{1,i}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial b_{1,i}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) \sigma'(\theta_{1, i}^{(t)}) U_{ik}\\
+        \frac{\partial J^{(t)}}{\partial \mathbf{b}_{1}} &= (\mathbf{y}^{(t)}-\text{softmax}(\boldsymbol{\theta}_2^{(t)})) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)}) \\
+        \\
+        \frac{\partial J^{(t)}}{\partial e_i^{(t)}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial e_i^{(t)}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) \sum_\ell \sigma'(\theta_{1, \ell}^{(t)})I_{i \ell}U_{\ell k}\\
+        \frac{\partial J^{(t)}}{\partial \mathbf{L}_{\mathbf{x}^{(t)}}} &= \frac{\partial J^{(t)}}{\partial \mathbf{e}^{(t)}} = (\mathbf{y}^{(t)}-\text{softmax}(\boldsymbol{\theta}_2^{(t)})) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)})\mathbf{I}^T\\
+    \end{align*}
+    
+    \begin{align*}
+        \frac{\partial J^{(t)}}{\partial b_{2, i}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial b_{2,i}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) \delta_{ik}\\
+        &= (y_i^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_i)\\
+        \frac{\partial J^{(t)}}{\partial \mathbf{b}_2} &= \mathbf{y}^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})\\
+        \\
+        \frac{\partial J^{(t)}}{\partial U_{ij}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial U_{ij}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) h_i^{(t)}\delta_{jk}\\
+        &= (y_j^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_j) h_i^{(t)} \\
+        \frac{\partial J^{(t)}}{\partial \mathbf{U}} &= \mathbf{h}^{(t)T} (\mathbf{y}^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)}))\\
+        \\
+        \frac{\partial J^{(t)}}{\partial h_i^{(t-1)}} &= \sum_k \frac{\partial J^{(t)}}{\partial \theta_{2, k}^{(t)}} \frac{\partial \theta_{2, k}^{(t)}}{\partial h_i^{(t-1)}}\\
+        &= \sum_k (y_k^{(t)} - \text{softmax}(\boldsymbol{\theta}_2^{(t)})_k) \sum_\ell \sigma'(\theta_{1, \ell}^{(t)}) H_{i\ell} U_{\ell k}\\
+        \frac{\partial J^{(t)}}{\partial \mathbf{h}^{(t-1)}} &= (\mathbf{y}^{(t)}-\text{softmax}(\boldsymbol{\theta}_2^{(t)})) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)})\mathbf{H}^T
+    \end{align*}
+    
+    \item[(b)]
+\end{itemize}
+
 \section{GRU question}
 \paragraph{Advantage}
 Smaller discrete space - There are about 100 English-language characters in common usage if we include all punctuation marks. By contrast, a vocabulary is many thousands of words. For char-based model we need about 100 embeddings to represent all possible tokens.
