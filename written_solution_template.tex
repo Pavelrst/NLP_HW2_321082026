@@ -7,6 +7,10 @@
 \usepackage{amssymb}
 \usepackage{bm}
 \usepackage{bbm}
+\usepackage{tikz}
+
+\usetikzlibrary{shapes}
+\usetikzlibrary{automata, positioning, arrows}
 
 \usepackage[shortlabels]{enumitem}
 \usepackage[noabbrev, capitalise]{cleveref}
@@ -274,6 +278,92 @@ Dev perplexity : 112.889
     \end{align*}
     
     \item[(b)]
+    
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm, semithick]
+    
+    \node[state] (neg) {$h^{(t-1)}$};
+    \node[state, right of=neg] (ht0) {$h^{(t)}$};
+    \node[state, right of=ht0] (ht1) {$h^{(t+1)}$};
+    \node[state, right of=ht1] (ht2) {$h^{(t+2)}$};
+    \node[state, right of=ht2] (pos) {$\cdots$};
+    
+    \node[state, below of=ht0] (in0) {$x^{(t)}$};
+    \node[state, below of=ht1] (in1) {$x^{(t+1)}$};
+    \node[state, below of=ht2] (in2) {$x^{(t+2)}$};
+    
+    \node[state, above of=ht0] (out0) {$\hat{y}^{(t)}$};
+    \node[state, above of=ht1] (out1) {$\hat{y}^{(t+1)}$};
+    \node[state, above of=ht2] (out2) {$\hat{y}^{(t+2)}$};
+    \draw
+            (neg) edge (ht0)
+            (ht0) edge (ht1)
+            (ht1) edge (ht2)
+            (ht2) edge (pos)
+            
+            (in0) edge (ht0)
+            (in1) edge (ht1)
+            (in2) edge (ht2)
+            
+            (ht0) edge (out0)
+            (ht1) edge (out1)
+            (ht2) edge (out2)
+            ;
+    \end{tikzpicture}
+    
+    
+    First we calculate the following auxiliary quantities, using all the notation and results from part (a) above:
+    
+    \begin{align*}
+        \frac{\partial J^{(t)}}{\partial \boldsymbol{\theta}_2^{(t)}} &= \mathbf{y}^{(t)} - \hat{\mathbf{y}}^{(t)} \\
+        \frac{\partial J^{(t)}}{\partial h^{(t)}_i} &= \sum_j \frac{\partial J^{(t)}}{\partial \theta_{2,j}^{(t)}}\frac{\partial \theta_{2, j}^{(t)}}{\partial h^{(t)}_i}\\
+        &= \sum_j (y^{(t)}_j - \hat{y}^{(t)}_j) \frac{\partial \theta_{2, j}^{(t)}}{\partial h^{(t)}_i} \\
+        &= \sum_j (y^{(t)}_j - \hat{y}^{(t)}_j) \frac{\partial}{\partial h^{(t)}_i} (\sum_k h^{(t)}_k U_{kj} + b_{2, j}) \\
+        &= \sum_j (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \\
+        \frac{\partial J^{(t)}}{\partial \mathbf{h}^{(t)}} &= (\mathbf{y}^{(t)} - \hat{\mathbf{y}}^{(t)}) \mathbf{U}^T \\
+        \frac{\partial J^{(t)}}{\partial \theta_{1, i}^{(t)}} &= \sum_j \frac{\partial J^{(t)}}{\partial h^{(t)}_j} \frac{\partial h^{(t)}_j}{\partial \theta_{1, i}^{(t)}} \\
+        &= \sum_{j,k} (y^{(t)}_k - \hat{y}^{(t)}_k) U_{jk} \frac{\partial h^{(t)}_j}{\partial \theta_{1, i}^{(t)}} \\
+        &= \sum_{j,k} (y^{(t)}_k - \hat{y}^{(t)}_k) U_{jk} \frac{\partial}{\partial \theta_{1, i}^{(t)}} \sigma(\theta_{1, j}^{(t)}) \\
+        &= \sum_{j,k} (y^{(t)}_k - \hat{y}^{(t)}_k) U_{jk} \delta_{ij} \sigma'(\theta_{1, i}^{(t)}) \\
+        &= \sum_{k} (y^{(t)}_k - \hat{y}^{(t)}_k) U_{ik} \sigma'(\theta_{1, i}^{(t)}) \\
+        \frac{\partial J^{(t)}}{\partial \boldsymbol{\theta}_1^{(t)}} &= (\mathbf{y}^{(t)} - \hat{\mathbf{y}}^{(t)}) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)})
+    \end{align*}
+    \begin{align*}
+        \frac{\partial h^{(t)}_i}{\partial e^{(t)}_j} &= \frac{\partial}{\partial e^{(t)}_j} \sigma(\sum_k h^{(t-1)}_k H_{ki} + \sum_k e^{(t)}_k I_{ki} + b_{1, i}) \\
+        &= I_{ji} \sigma'(\sum_kh^{(t-1)}_k H_{ki} + \sum_k e^{(t)}_k I_{ki} + b_{1, i}) \\
+        &= I_{ji} \sigma'(\theta^{(t)}_{1, i}) \\
+        \frac{\partial h^{(t)}_i}{\partial H_{jk}} &= \frac{\partial}{\partial H_{jk}} \sigma(\sum_\ell h^{(t-1)}_\ell H_{\ell i} + \sum_\ell e^{(t)}_\ell I_{\ell i} + b_{1, i}) \\
+        &= h_j^{(t-1)}\delta_{ik} \sigma'(\theta_{1, i}^{(t)}) \\
+        \frac{\partial h^{(t)}_i}{\partial I_{jk}} &= \frac{\partial}{\partial I_{jk}} \sigma(\sum_\ell h^{(t-1)}_\ell H_{\ell i} + \sum_\ell e^{(t)}_\ell I_{\ell i} + b_{1, i}) \\
+        &= e_j^{(t)}\delta_{ik} \sigma'(\theta_{1, i}^{(t)}) \\
+        \frac{\partial h^{(t)}_i}{\partial b_{1,j}} &= \frac{\partial}{\partial b_{1,j}} \sigma(\sum_\ell h^{(t-1)}_\ell H_{\ell i} + \sum_\ell e^{(t)}_\ell I_{\ell i} + b_{1, i}) \\
+        &= \delta_{ij} \sigma'(\theta_{1, i}^{(t)})
+    \end{align*}
+    
+    
+    Now we can calculate the desired quantities:
+    
+    \begin{align*}
+        \frac{\partial J^{(t)}}{\partial L_{\mathbf{x}^{(t-1)}, k}} &= \frac{\partial J^{(t)}}{\partial e^{(t-1)}_k} = \sum_i \frac{\partial J^{(t)}}{\partial \theta_{1,i}^{(t)}} \frac{\partial \theta_{1,i}^{(t)}}{\partial e^{(t-1)}_k} \\
+        &= \sum_{i,j} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) \frac{\partial \theta_{1,i}^{(t)}}{\partial e^{(t-1)}_k} \\
+        &= \sum_{i,j} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) \frac{\partial}{\partial e^{(t-1)}_k} (\sum_\ell h^{(t-1)}_\ell H_{\ell i}) \\
+        &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} \frac{\partial h^{(t-1)}_\ell}{\partial e^{(t-1)}_k} \\
+        &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} I_{k\ell} \sigma'(\theta^{(t-1)}_{1, \ell}) \\
+        \frac{\partial J^{(t)}}{\partial \mathbf{L}_{\mathbf{x}^{(t-1)}}} &= (\mathbf{y}^{(t)}-\hat{\mathbf{y}}^{(t)}_k) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)}) \mathbf{H}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t-1)}) \mathbf{I}^T \\
+        \left. \frac{\partial J^{(t)}}{\partial H_{mn}} \right|_{(t-1)} &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} \left.\frac{\partial h^{(t-1)}_\ell}{\partial H_{mn}}\right|_{(t-1)} \:\:\:\text{(by the same logic as above)}\\
+        &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} h^{(t-2)}_m \delta_{\ell n} \sigma'(\theta^{(t-1)}_{1, \ell}) \\
+        &= \sum_{i,j} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{n i} h^{(t-2)}_m \sigma'(\theta^{(t-1)}_{1, n}) \\
+        \left. \frac{\partial J^{(t)}}{\partial \mathbf{H}} \right|_{(t-1)} &= \mathbf{h}^{(t-2) T} (\mathbf{y}^{(t)}-\hat{\mathbf{y}}^{(t)}_k) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)}) \mathbf{H}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t-1)}) \\
+        \left. \frac{\partial J^{(t)}}{\partial I_{mn}} \right|_{(t-1)} &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} \left.\frac{\partial h^{(t-1)}_\ell}{\partial I_{mn}}\right|_{(t-1)} \:\:\:\text{(by the same logic as above)}\\
+        &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} e^{(t-1)}_m \delta_{\ell n} \sigma'(\theta^{(t-1)}_{1, \ell}) \\
+        &= \sum_{i,j} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{n i} e^{(t-1)}_m \sigma'(\theta^{(t-1)}_{1, n}) \\
+        \left. \frac{\partial J^{(t)}}{\partial \mathbf{I}} \right|_{(t-1)} &= \mathbf{e}^{(t-1) T} (\mathbf{y}^{(t)}-\hat{\mathbf{y}}^{(t)}_k) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)}) \mathbf{H}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t-1)}) \\
+    \end{align*}
+    \begin{align*}
+        \left. \frac{\partial J^{(t)}}{\partial b_{1,k}} \right|_{(t-1)} &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} \left.\frac{\partial h^{(t-1)}_\ell}{\partial b_{1,k}}\right|_{(t-1)} \\
+        &= \sum_{i,j,\ell} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{\ell i} \delta_{\ell k}\sigma'(\theta_{1, \ell}^{(t-1)}) \\
+        &= \sum_{i,j} (y^{(t)}_j - \hat{y}^{(t)}_j) U_{ij} \sigma'(\theta_{1, i}^{(t)}) H_{k i} \sigma'(\theta_{1, k}^{(t-1)}) \\
+        \left. \frac{\partial J^{(t)}}{\partial \mathbf{b}_1} \right|_{(t-1)} &= (\mathbf{y}^{(t)}-\hat{\mathbf{y}}^{(t)}_k) \mathbf{U}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t)}) \mathbf{H}^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1^{(t-1)})
+    \end{align*}
 \end{itemize}
 
 \section{GRU question}
