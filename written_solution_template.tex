@@ -41,59 +41,7 @@
 
 \begin{document}
 
-
 \section{Word-Level Neural Bigram Language Model}
-
-
-\begin{itemize}
-    \item[(a)]
-    
-    \begin{align*}
-        \text{CE}(\mathbf{y}, \hat{\mathbf{y}}) &= \text{CE}(\mathbf{y}, \text{softmax}(\boldsymbol{\theta})) \\
-        &= \sum_i y_i \ln (\text{softmax}(\boldsymbol{\theta})_i) \\
-        &= \sum_i y_i \ln \left( \frac{\exp(\theta_i)}{\sum_j \exp(\theta_j)} \right) \\
-        &= \sum_i y_i \left(\theta_i - \ln\left(\sum_j \exp(\theta_j)\right)\right) \\
-        &= \mathbf{y} \cdot \boldsymbol{\theta} - \sum_i y_i \ln(\sum_j \exp(\theta_j))) \\
-    \end{align*}
-    
-    Since $\mathbf{y}$ is one-hot encoded, $\sum_i y_i = 1$, so
-    
-    \begin{align*}
-        \text{CE}(\mathbf{y}, \hat{\mathbf{y}}) &= \mathbf{y} \cdot \boldsymbol{\theta} - \ln(\sum_j \exp(\theta_j)) \\
-        \frac{\partial}{\partial \theta_i} \text{CE}(\mathbf{y}, \hat{\mathbf{y}}) &= y_i - \frac{\exp(\theta_i)}{\sum_j \exp(\theta_j)} \\
-        &= y_i - \text{softmax}(\boldsymbol{\theta})_i \\
-        \nabla_{\boldsymbol{\theta}} \text{CE}(\mathbf{y}, \hat{\mathbf{y}}) &= \mathbf{y} - \text{softmax}(\boldsymbol{\theta})
-    \end{align*}
-    
-    This makes sense since the unique critical point (point where gradient equals zero) occurs where $\text{softmax}(\boldsymbol{\theta}) = \mathbf{y}$.
-    
-    \item[(b)]
-    
-    Define $\boldsymbol{\theta}_1 = \mathbf{x}\mathbf{W}_1 + \mathbf{b}_1$ and $\boldsymbol{\theta}_2 = \mathbf{h}\mathbf{W}_2 + \mathbf{b}_2$ (logit vectors), and note that these have Jacobians $\frac{\partial \boldsymbol{\theta}_1}{\partial \mathbf{x}} = \mathbf{W}_1^T$ and $\frac{\partial \boldsymbol{\theta}_2}{\partial \mathbf{h}} = \mathbf{W}_2^T$.
-    
-    For any vector $\mathbf{v}$, define $\boldsymbol{\Sigma}(\mathbf{v})$ to be the diagonal matrix with $i$-th diagonal element equal to $\sigma(v_i)(1-\sigma(v_i))$. By homework 1 question 2e, $\boldsymbol{\Sigma}(\mathbf{v})$ is the Jacobian matrix $\frac{\boldsymbol{\Sigma}(\mathbf{v})}{\partial \mathbf{v}}$.
-    
-    By the result in (a) and the chain rule,
-    
-        $$\frac{\partial J(\mathbf{y}, \hat{\mathbf{y}})}{\partial \mathbf{h}} = \frac{\partial J(\mathbf{y}, \hat{\mathbf{y}})}{\partial \boldsymbol{\theta_2}} \frac{\partial \boldsymbol{\theta_2}}{\partial \mathbf{h}} \\
-        = (\mathbf{y} - \text{softmax}(\boldsymbol{\theta_2})) \mathbf{W}_2^T$$
-    
-    Therefore, using that $\mathbf{h} = \boldsymbol{\Sigma}(\mathbf{\theta_1})$ and applying the chain rule repeatedly,
-    
-    \begin{align*}
-    \frac{\partial J(\mathbf{y}, \hat{\mathbf{y}})}{\partial \mathbf{x}} &= \frac{\partial J(\mathbf{y}, \hat{\mathbf{y}})}{\partial \mathbf{h}} \frac{\partial \mathbf{h}}{\partial \mathbf{x}} \\
-    &= \frac{\partial J(\mathbf{y}, \hat{\mathbf{y}})}{\partial \mathbf{h}} \frac{\partial \boldsymbol{\Sigma}(\boldsymbol{\theta}_1)}{\partial \mathbf{x}} \\
-    &= \frac{\partial J(\mathbf{y}, \hat{\mathbf{y}})}{\partial \mathbf{h}} \frac{\partial \boldsymbol{\Sigma}(\boldsymbol{\theta}_1)}{\partial \boldsymbol{\theta}_1} \frac{\partial \boldsymbol{\theta}_1}{\mathbf{x}} \\
-    &= (\mathbf{y} - \text{softmax}(\boldsymbol{\theta_2})) \mathbf{W}_2^T \boldsymbol{\Sigma}(\boldsymbol{\theta}_1) \mathbf{W}_1^T \\
-    \end{align*}
-    
-    Note that in this expression the matrix shapes are compatible: $\mathbf{y}-\text{softmax}(\boldsymbol{\theta}_2)$ is $1 \times D_y$, $\mathbf{W}_2^T$ is $D_y \times D_h$, $\boldsymbol{\Sigma}(\boldsymbol{\theta}_1)$ is $D_h \times D_h$, and $\mathbf{W}_1^T$ is $D_h \times D_x$. Therefore the result of the matrix multiplication is of shape $1 \times D_x$, as desired.
-    
-    \item[(c)] (see code)
-    \item[(d)]
-\end{itemize}
-
-\section{RNN question}
 \subsection{Gradient of Softmax + CE}
 \subparagraph{•}
 Denote SCE - Softmax Cross Entropy function:\\
